@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import sqlite3
 
-from schemas import NewProduct
+from schemas import NewProduct, SavedProduct
 
 
 class BaseStorageProduct(ABC):
@@ -48,8 +48,33 @@ class StorageSQLite(BaseStorageProduct):
         self.product_table_name = 'products'
         self._create_table()
 
-    def create_product(self, new_product: NewProduct):
-        pass
+    def create_product(self, new_product: NewProduct) -> SavedProduct:
+        with sqlite3.connect(self.database_name) as connection:
+            cursor = connection.cursor()
+            values = (new_product.title, new_product.description, new_product.price, str(new_product.cover))
+            query = f"""
+                INSERT INTO {self.product_table_name} (title, description, price, cover)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, values)
+        return self._get_latest_product()
+
+    def _get_latest_product(self) -> SavedProduct:
+        with sqlite3.connect(self.database_name) as connection:
+            cursor = connection.cursor()
+            query = f"""
+                SELECT id, title, description, price, cover, created_at
+                FROM {self.product_table_name}
+                ORDER BY id DESC
+                LIMIT 1
+            """
+            result = cursor.execute(query).fetchone()
+            id, title, description, price, cover, created_at = result
+            saved_product = SavedProduct(
+                id=id, title=title, description=description, price=price, cover=cover, created_at=created_at
+            )
+
+            return saved_product
 
     def get_product(self, _id: int):
         pass

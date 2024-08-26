@@ -1,26 +1,21 @@
 from fastapi import FastAPI, status
-from pydantic import BaseModel, HttpUrl, Field
 
-from schemas import NewProduct
-
+from schemas import NewProduct, SavedProduct
+from storage import storage
 
 app = FastAPI(
     debug=True,
-    title="Group13/05/2024"
+    title='Group1305'
 )
 
 
-@app.get("/")
+@app.get('/', include_in_schema=False)
 def index():
-    return {"subject": "Hello!"}
+    return {'subject': 'Hello!'}
 
 
 # CRUD
-
-
-
-
-@app.post("/api/product/", description="create product", status_code=status.HTTP_201_CREATED, tags=["API", "Products"])
-def add_product(data: NewProduct) -> dict:
-    print(data)
-    return {}
+@app.post('/api/product/', description='create product', status_code=status.HTTP_201_CREATED, tags=['API', 'Product'])
+def add_product(new_product: NewProduct) -> SavedProduct:
+    saved_product = storage.create_product(new_product)
+    return saved_product
